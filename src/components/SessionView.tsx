@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { ZoneGauge } from './ZoneGauge'
 import { DrinkLogger } from './DrinkLogger'
 import { DrinkList } from './DrinkList'
@@ -8,17 +8,20 @@ import { FoodTips } from './FoodTips'
 import { HydrationTracker } from './HydrationTracker'
 import { useLiveBAC } from '../hooks/useLiveBAC'
 import { formatTimeSince } from '../lib/units'
-import { detectFastDrinking } from '../lib/drinkingRate'
-import { shouldRemindHydration } from '../lib/hydration'
+import { shouldShowFastDrinkingAlert } from '../lib/drinkingRate'
+import { shouldRemindHydration, hydrationReminderMessage } from '../lib/hydration'
+import { getZone } from '../lib/bac'
 import type { DrinkEntry, FoodIntake, HydrationEntry, UserProfile } from '../types'
 
 interface SessionViewProps {
   profile: UserProfile
+  sessionStartedAt: number
   foodIntake: FoodIntake
   drinks: DrinkEntry[]
   hydration: HydrationEntry[]
   drinkLimit: number
-  fastDrinkingAlertDismissed: boolean
+  fastDrinkingDismissedAt?: number
+  midSessionRecoveryDismissed?: boolean
   emptyStomachWarningDismissed: boolean
   limitWarningDismissed: boolean
   hydrationReminderDismissedAt?: number
@@ -30,6 +33,7 @@ interface SessionViewProps {
   onEndSession: () => void
   onShowHistory: () => void
   onDismissFastDrinkingAlert: () => void
+  onDismissMidSessionRecovery: () => void
   onDismissEmptyStomachWarning: () => void
   onDismissLimitWarning: () => void
   onDismissHydrationReminder: () => void
@@ -37,11 +41,13 @@ interface SessionViewProps {
 
 export function SessionView({
   profile,
+  sessionStartedAt,
   foodIntake,
   drinks,
   hydration,
   drinkLimit,
-  fastDrinkingAlertDismissed,
+  fastDrinkingDismissedAt,
+  midSessionRecoveryDismissed,
   emptyStomachWarningDismissed,
   limitWarningDismissed,
   hydrationReminderDismissedAt,
@@ -53,12 +59,18 @@ export function SessionView({
   onEndSession,
   onShowHistory,
   onDismissFastDrinkingAlert,
+  onDismissMidSessionRecovery,
   onDismissEmptyStomachWarning,
   onDismissLimitWarning,
   onDismissHydrationReminder,
 }: SessionViewProps) {
   const { bac, now } = useLiveBAC(drinks, profile, foodIntake)
   const [showProfile, setShowProfile] = useState(false)
+  const [peakBac, setPeakBac] = useState(0)
+
+  useEffect(() => {
+    if (bac > peakBac) setPeakBac(bac)
+  }, [bac, peakBac])
 
   const lastDrink =
     drinks.length > 0
@@ -68,8 +80,7 @@ export function SessionView({
         )
       : null
 
-  const showFastAlert =
-    !fastDrinkingAlertDismissed && detectFastDrinking(drinks, now)
+  const showFastAlert = shouldShowFastDrinkingAlert(drinks, fastDrinkingDismissedAt, now)
 
   const showEmptyStomachWarning =
     foodIntake === 'nothing' &&
@@ -92,7 +103,17 @@ export function SessionView({
     hydration,
     hydrationReminderDismissedAt,
     now,
+    sessionStartedAt,
   )
+
+  const peakZone = getZone(peakBac).zone
+  const currentZone = getZone(bac).zone
+  const showMidRecovery =
+    !midSessionRecoveryDismissed &&
+    drinks.length >= 2 &&
+    (peakZone === 'impaired' || peakZone === 'danger') &&
+    (currentZone === 'buzzed' || currentZone === 'sober') &&
+    peakBac > bac
 
   if (showProfile) {
     return (
@@ -171,9 +192,17 @@ export function SessionView({
         />
       )}
 
+      {showMidRecovery && (
+        <AlertBanner
+          message="Your BAC is coming down — good time to switch to water, eat something, and start winding down."
+          onDismiss={onDismissMidSessionRecovery}
+          variant="gentle"
+        />
+      )}
+
       {showHydrationReminder && (
         <AlertBanner
-          message="Time for some water, bro 💧 You've had a few drinks since your last glass."
+          message={hydrationReminderMessage(drinks, hydration, sessionStartedAt, now)}
           onDismiss={onDismissHydrationReminder}
         />
       )}

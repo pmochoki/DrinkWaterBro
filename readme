@@ -41,7 +41,7 @@ npm run build
 
 ### Firebase setup
 
-1. Create a Firebase project and enable **Authentication → Anonymous** sign-in.
+1. Create a Firebase project and enable **Authentication → Google** sign-in (pick a support email in the console).
 2. Create a **Firestore** database.
 3. Copy `.env.example` → `.env` and paste your web app config keys.
 4. Deploy security rules:

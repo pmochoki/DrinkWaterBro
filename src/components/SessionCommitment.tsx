@@ -3,9 +3,10 @@ import type { SessionGoal } from '../types'
 
 interface SessionCommitmentProps {
   onSelect: (goal: SessionGoal, limit: number) => void
+  onEditProfile?: () => void
 }
 
-export function SessionCommitment({ onSelect }: SessionCommitmentProps) {
+export function SessionCommitment({ onSelect, onEditProfile }: SessionCommitmentProps) {
   return (
     <div className="flex min-h-dvh flex-col justify-center px-4 py-8">
       <div className="mb-8 text-center">
@@ -36,6 +37,16 @@ export function SessionCommitment({ onSelect }: SessionCommitmentProps) {
       <p className="mt-6 text-center text-xs text-slate-500">
         We'll gently flag when you're approaching your limit — no hard blocks, just a caring nudge.
       </p>
+
+      {onEditProfile && (
+        <button
+          type="button"
+          onClick={onEditProfile}
+          className="mt-4 w-full text-center text-sm text-slate-500 underline"
+        >
+          Edit profile
+        </button>
+      )}
     </div>
   )
 }

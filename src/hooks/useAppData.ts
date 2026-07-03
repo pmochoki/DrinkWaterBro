@@ -9,11 +9,11 @@ import type {
   CompletedSession,
 } from '../types'
 import { loadAppData, saveAppData, generateId } from '../lib/storage'
-import { loadFirestoreAppData, saveFirestoreAppData } from '../lib/firestoreStorage'
+import { loadFirestoreAppData, saveFirestoreAppData, saveCompletedSession } from '../lib/firestoreStorage'
 import { calculateBAC, getZone } from '../lib/bac'
 import { totalGlasses } from '../lib/hydration'
-import { buildSessionAlarms } from '../lib/recovery'
-import { scheduleSessionAlarms } from '../lib/alarms'
+import { buildSessionAlarms, morningBreakfastSuggestion } from '../lib/recovery'
+import { requestNotificationPermission, scheduleMorningAlarm, scheduleSessionAlarms } from '../lib/alarms'
 
 interface UseAppDataOptions {
   uid?: string | null
@@ -87,10 +87,16 @@ export function useAppData({ uid, cloudReady = false }: UseAppDataOptions = {}) 
   }, [])
 
   const startSession = useCallback(
-    (foodIntake: FoodIntake, goal: SessionGoal, drinkLimit: number) => {
+    async (foodIntake: FoodIntake, goal: SessionGoal, drinkLimit: number) => {
       const profile = data.profile
       const alarms = profile ? buildSessionAlarms(profile) : undefined
-      if (alarms) scheduleSessionAlarms(alarms)
+
+      if (alarms && profile?.workTomorrow) {
+        const granted = await requestNotificationPermission()
+        if (granted) {
+          await scheduleSessionAlarms(alarms)
+        }
+      }
 
       const session: ActiveSession = {
         id: generateId(),
@@ -128,6 +134,8 @@ export function useAppData({ uid, cloudReady = false }: UseAppDataOptions = {}) 
         drinks: session.drinks,
         foodIntake: session.foodIntake,
         goal: session.goal,
+        drinkLimit: session.drinkLimit,
+        hydration: session.hydration,
         peakBac,
         peakZone: getZone(peakBac).zone,
         hydrationGlasses: totalGlasses(session.hydration),
@@ -135,13 +143,24 @@ export function useAppData({ uid, cloudReady = false }: UseAppDataOptions = {}) 
 
       setLastCompletedSession(completed)
 
+      if (uid && cloudReady) {
+        saveCompletedSession(uid, completed).catch((err: Error) => {
+          setSyncError(err.message)
+        })
+      }
+
+      if (session.alarms?.wakeUpAt && prev.profile.workTomorrow) {
+        const breakfast = morningBreakfastSuggestion(completed)
+        void scheduleMorningAlarm(session.alarms.wakeUpAt, breakfast)
+      }
+
       return {
         ...prev,
         activeSession: null,
         sessionHistory: [completed, ...prev.sessionHistory].slice(0, 100),
       }
     })
-  }, [])
+  }, [uid, cloudReady])
 
   const dismissRecovery = useCallback(() => {
     setLastCompletedSession(null)
@@ -196,7 +215,20 @@ export function useAppData({ uid, cloudReady = false }: UseAppDataOptions = {}) 
         ...prev,
         activeSession: {
           ...prev.activeSession,
-          fastDrinkingAlertDismissed: true,
+          fastDrinkingDismissedAt: Date.now(),
+        },
+      }
+    })
+  }, [])
+
+  const dismissMidSessionRecovery = useCallback(() => {
+    setData((prev) => {
+      if (!prev.activeSession) return prev
+      return {
+        ...prev,
+        activeSession: {
+          ...prev.activeSession,
+          midSessionRecoveryDismissed: true,
         },
       }
     })
@@ -294,6 +326,7 @@ export function useAppData({ uid, cloudReady = false }: UseAppDataOptions = {}) 
     updateDrink,
     deleteDrink,
     dismissFastDrinkingAlert,
+    dismissMidSessionRecovery,
     dismissEmptyStomachWarning,
     dismissLimitWarning,
     dismissHydrationReminder,

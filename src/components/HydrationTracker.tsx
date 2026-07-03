@@ -91,6 +91,11 @@ export function HydrationTracker({ drinks, hydration, onLogGlass }: HydrationTra
       >
         + Log a glass ({formatVolume(GLASS_ML)})
       </button>
+
+      <p className="mt-3 text-xs text-slate-500">
+        Tip: add electrolytes (coconut water, sports drink, or a pinch of salt in water) if you've
+        had several drinks — alcohol flushes minerals your body needs.
+      </p>
     </section>
   )
 }

@@ -27,7 +27,7 @@ function migrateProfile(raw: Record<string, unknown>): UserProfile | null {
 
 function migrateSession(raw: Record<string, unknown> | null): ActiveSession | null {
   if (!raw || !raw.foodIntake) return null
-  const s = raw as Partial<ActiveSession>
+  const s = raw as Partial<ActiveSession> & { fastDrinkingAlertDismissed?: boolean }
   return {
     id: s.id ?? `${Date.now()}`,
     startedAt: s.startedAt ?? Date.now(),
@@ -37,7 +37,10 @@ function migrateSession(raw: Record<string, unknown> | null): ActiveSession | nu
     drinkLimit: s.drinkLimit ?? 4,
     hydration: s.hydration ?? [],
     alarms: s.alarms,
-    fastDrinkingAlertDismissed: s.fastDrinkingAlertDismissed,
+    fastDrinkingDismissedAt:
+      s.fastDrinkingDismissedAt ??
+      (s.fastDrinkingAlertDismissed ? Date.now() : undefined),
+    midSessionRecoveryDismissed: s.midSessionRecoveryDismissed,
     emptyStomachWarningDismissed: s.emptyStomachWarningDismissed,
     limitWarningDismissed: s.limitWarningDismissed,
     hydrationReminderDismissedAt: s.hydrationReminderDismissedAt,

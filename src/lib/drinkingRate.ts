@@ -21,6 +21,17 @@ export function detectFastDrinking(
   return drinksInWindow.length >= threshold
 }
 
+export function shouldShowFastDrinkingAlert(
+  drinks: DrinkEntry[],
+  dismissedAt: number | undefined,
+  atTime: number = Date.now(),
+): boolean {
+  if (!detectFastDrinking(drinks, atTime)) return false
+  if (!dismissedAt) return true
+  const latestDrinkTs = Math.max(...drinks.map((d) => d.timestamp))
+  return latestDrinkTs > dismissedAt
+}
+
 export function countDrinksInWindow(
   drinks: DrinkEntry[],
   _atTime: number = Date.now(),

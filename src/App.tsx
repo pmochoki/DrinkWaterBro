@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAppData } from './hooks/useAppData'
 import { useAuth } from './hooks/useAuth'
 import { ProfileForm } from './components/ProfileForm'
@@ -10,12 +10,23 @@ import { SessionHistory } from './components/SessionHistory'
 import { PatternFlag } from './components/PatternFlag'
 import { SignIn } from './components/SignIn'
 import { detectDrinkingPatterns } from './lib/patterns'
+import { reschedulePendingAlarms } from './lib/alarms'
 import type { SessionGoal } from './types'
 
 type PreSessionStep = 'commitment' | 'food'
 
 export default function App() {
-  const { user, loading: authLoading, signingIn, error: authError, signInWithGoogle, signOut, cloudReady } = useAuth()
+  const {
+    user,
+    loading: authLoading,
+    signingIn,
+    error: authError,
+    signInWithGoogle,
+    signInWithEmail,
+    signUpWithEmail,
+    signOut,
+    cloudReady,
+  } = useAuth()
   const {
     profile,
     activeSession,
@@ -33,6 +44,7 @@ export default function App() {
     updateDrink,
     deleteDrink,
     dismissFastDrinkingAlert,
+    dismissMidSessionRecovery,
     dismissEmptyStomachWarning,
     dismissLimitWarning,
     dismissHydrationReminder,
@@ -43,6 +55,11 @@ export default function App() {
   const [preSessionStep, setPreSessionStep] = useState<PreSessionStep>('commitment')
   const [pendingGoal, setPendingGoal] = useState<{ goal: SessionGoal; limit: number } | null>(null)
   const [showHistory, setShowHistory] = useState(false)
+  const [editingProfile, setEditingProfile] = useState(false)
+
+  useEffect(() => {
+    reschedulePendingAlarms()
+  }, [])
 
   const pattern = detectDrinkingPatterns(
     sessionHistory,
@@ -60,7 +77,9 @@ export default function App() {
   if (!user) {
     return (
       <SignIn
-        onSignIn={signInWithGoogle}
+        onSignInWithGoogle={signInWithGoogle}
+        onSignInWithEmail={signInWithEmail}
+        onSignUpWithEmail={signUpWithEmail}
         loading={signingIn}
         error={authError}
       />
@@ -81,6 +100,29 @@ export default function App() {
           {syncError && <p className="mt-2 text-xs text-amber-400">Cloud sync issue — saved locally.</p>}
         </div>
         <ProfileForm onSave={setProfile} onSignOut={() => void signOut()} />
+      </div>
+    )
+  }
+
+  if (editingProfile) {
+    return (
+      <div className="mx-auto max-w-lg px-4 py-6">
+        <button
+          type="button"
+          onClick={() => setEditingProfile(false)}
+          className="mb-4 text-sm text-water"
+        >
+          ← Back
+        </button>
+        <ProfileForm
+          initial={profile}
+          onSave={(p) => {
+            setProfile(p)
+            setEditingProfile(false)
+          }}
+          onSignOut={() => void signOut()}
+          title="Edit Profile"
+        />
       </div>
     )
   }
@@ -124,6 +166,7 @@ export default function App() {
               setPendingGoal({ goal, limit })
               setPreSessionStep('food')
             }}
+            onEditProfile={() => setEditingProfile(true)}
           />
           <div className="px-4 pb-6 text-center">
             <button
@@ -145,7 +188,7 @@ export default function App() {
         <FoodCheckIn
           onSelect={(foodIntake) => {
             if (pendingGoal) {
-              startSession(foodIntake, pendingGoal.goal, pendingGoal.limit)
+              void startSession(foodIntake, pendingGoal.goal, pendingGoal.limit)
               setPendingGoal(null)
               setPreSessionStep('commitment')
             }
@@ -163,11 +206,13 @@ export default function App() {
       )}
       <SessionView
         profile={profile}
+        sessionStartedAt={activeSession.startedAt}
         foodIntake={activeSession.foodIntake}
         drinks={activeSession.drinks}
         hydration={activeSession.hydration}
         drinkLimit={activeSession.drinkLimit}
-        fastDrinkingAlertDismissed={activeSession.fastDrinkingAlertDismissed ?? false}
+        fastDrinkingDismissedAt={activeSession.fastDrinkingDismissedAt}
+        midSessionRecoveryDismissed={activeSession.midSessionRecoveryDismissed}
         emptyStomachWarningDismissed={activeSession.emptyStomachWarningDismissed ?? false}
         limitWarningDismissed={activeSession.limitWarningDismissed ?? false}
         hydrationReminderDismissedAt={activeSession.hydrationReminderDismissedAt}
@@ -179,6 +224,7 @@ export default function App() {
         onEndSession={endSession}
         onShowHistory={() => setShowHistory(true)}
         onDismissFastDrinkingAlert={dismissFastDrinkingAlert}
+        onDismissMidSessionRecovery={dismissMidSessionRecovery}
         onDismissEmptyStomachWarning={dismissEmptyStomachWarning}
         onDismissLimitWarning={dismissLimitWarning}
         onDismissHydrationReminder={dismissHydrationReminder}

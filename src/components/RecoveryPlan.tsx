@@ -2,10 +2,11 @@ import {
   BEFORE_SLEEP_TIPS,
   HANGOVER_FOODS,
   AVOID_TIPS,
+  NAUSEA_STOMACH_TIP,
   recoveryWaterGlasses,
   morningBreakfastSuggestion,
 } from '../lib/recovery'
-import { requestNotificationPermission } from '../lib/alarms'
+import { requestNotificationPermission, scheduleMorningAlarm } from '../lib/alarms'
 import type { CompletedSession, UserProfile } from '../types'
 
 interface RecoveryPlanProps {
@@ -20,7 +21,15 @@ export function RecoveryPlan({ session, profile, onDone, onRate }: RecoveryPlanP
   const breakfast = morningBreakfastSuggestion(session)
 
   const handleEnableAlarms = async () => {
-    await requestNotificationPermission()
+    const granted = await requestNotificationPermission()
+    if (granted && profile.wakeTimeHour != null) {
+      const wake = new Date()
+      wake.setDate(wake.getDate() + 1)
+      wake.setHours(profile.wakeTimeHour, profile.wakeTimeMinute ?? 0, 0, 0)
+      if (wake.getTime() > Date.now()) {
+        await scheduleMorningAlarm(wake.getTime(), breakfast)
+      }
+    }
     onDone()
   }
 
@@ -52,6 +61,7 @@ export function RecoveryPlan({ session, profile, onDone, onRate }: RecoveryPlanP
           Tomorrow morning
         </h3>
         <p className="mt-2 text-sm text-slate-300">{breakfast}</p>
+        <p className="mt-3 text-sm text-slate-400">{NAUSEA_STOMACH_TIP}</p>
         <ul className="mt-3 space-y-2">
           {HANGOVER_FOODS.map(({ food, why }) => (
             <li key={food} className="text-sm text-slate-400">
@@ -74,7 +84,7 @@ export function RecoveryPlan({ session, profile, onDone, onRate }: RecoveryPlanP
 
       {profile.workTomorrow && (
         <button
-          onClick={handleEnableAlarms}
+          onClick={() => void handleEnableAlarms()}
           className="mb-4 w-full rounded-xl bg-water/20 py-3 text-sm font-medium text-water"
         >
           Enable morning reminders

@@ -39,6 +39,12 @@ describe('hydration', () => {
     expect(shouldRemindHydration(drinks, [], undefined, now)).toBe(true)
   })
 
+  it('reminds after 45 minutes without water', () => {
+    const drinks = [drink(50)]
+    const started = now - 46 * 60 * 1000
+    expect(shouldRemindHydration(drinks, [], undefined, now, started)).toBe(true)
+  })
+
   it('does not remind right after dismissal', () => {
     const drinks = [drink(30), drink(20)]
     expect(shouldRemindHydration(drinks, [], now - 1000, now)).toBe(false)

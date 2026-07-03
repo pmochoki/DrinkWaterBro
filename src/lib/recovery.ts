@@ -22,6 +22,9 @@ export const AVOID_TIPS = [
   'Ibuprofen on an empty stomach — eat something first',
 ]
 
+export const NAUSEA_STOMACH_TIP =
+  'Morning nausea often comes from alcohol irritating your stomach lining — not just dehydration. Gentle foods, ginger tea, and electrolytes help calm it down.'
+
 export function recoveryWaterGlasses(session: CompletedSession): number {
   return waterGlassesRecommended(session.drinks.length) + 1
 }

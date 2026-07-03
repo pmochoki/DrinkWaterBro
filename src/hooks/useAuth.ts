@@ -1,14 +1,12 @@
 import { useCallback, useEffect, useState } from 'react'
+import { onAuthStateChanged, type User } from 'firebase/auth'
+import { auth } from '../services/firebase'
 import {
-  GoogleAuthProvider,
-  onAuthStateChanged,
-  signInWithPopup,
+  signInWithGoogle as firebaseSignInWithGoogle,
+  signInWithEmail as firebaseSignInWithEmail,
+  signUpWithEmail as firebaseSignUpWithEmail,
   signOut as firebaseSignOut,
-  type User,
-} from 'firebase/auth'
-import { auth } from '../firebase'
-
-const googleProvider = new GoogleAuthProvider()
+} from '../services/auth'
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null)
@@ -36,7 +34,7 @@ export function useAuth() {
     setSigningIn(true)
     setError(null)
     try {
-      await signInWithPopup(auth, googleProvider)
+      await firebaseSignInWithGoogle()
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Google sign-in failed'
       setError(message)
@@ -46,9 +44,37 @@ export function useAuth() {
     }
   }, [])
 
+  const signInWithEmail = useCallback(async (email: string, password: string) => {
+    setSigningIn(true)
+    setError(null)
+    try {
+      await firebaseSignInWithEmail(email, password)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Sign-in failed'
+      setError(message)
+      throw err
+    } finally {
+      setSigningIn(false)
+    }
+  }, [])
+
+  const signUpWithEmail = useCallback(async (email: string, password: string) => {
+    setSigningIn(true)
+    setError(null)
+    try {
+      await firebaseSignUpWithEmail(email, password)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Sign-up failed'
+      setError(message)
+      throw err
+    } finally {
+      setSigningIn(false)
+    }
+  }, [])
+
   const signOut = useCallback(async () => {
     setError(null)
-    await firebaseSignOut(auth)
+    await firebaseSignOut()
   }, [])
 
   return {
@@ -57,6 +83,8 @@ export function useAuth() {
     error,
     signingIn,
     signInWithGoogle,
+    signInWithEmail,
+    signUpWithEmail,
     signOut,
     cloudReady: !!user,
   }
