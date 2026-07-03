@@ -1,31 +1,47 @@
 # DrinkWaterBro 💧
 
-A personal harm-reduction drink tracking app — because sometimes you need 
-a friend to tell you to drink some water, bro.
+A personal harm-reduction drink tracking app — because sometimes you need a friend to tell you to drink some water, bro.
 
 ## What it does
 
-- Estimates your BAC in real time using your weight, height, age, and sex
+- Estimates your BAC in real time using the Widmark formula (weight, sex, metabolism rate)
 - Shows your current zone: Sober / Buzzed / Impaired / Danger
-- Logs drinks by type, volume, and ABV%
-- Tracks food intake and adjusts how fast alcohol hits you
-- Reminds you to hydrate during a session
-- Lets you set a personal limit *before* you start drinking
-- Saves session history so you can see your patterns over time
-
-## Tech Stack
-
-- React + Vite
-- Tailwind CSS
-- localStorage / IndexedDB
-- PWA (installable, works offline)
+- Logs drinks via quick-add buttons or custom entry (all fields editable)
+- Edit and delete past drink entries
+- Profile setup with weight (kg/lb), height, age, and biological sex
+- Persists everything to localStorage
 
 ## Philosophy
 
-This app is about awareness, not optimization. It won't tell you how much 
-more you can drink. It'll tell you where you're at and help you stay in 
-control — that's it.
+This app is about **awareness, not optimization**. It won't tell you how much more you can drink. It'll tell you where you're at and help you stay in control — that's it.
+
+## Tech Stack
+
+- React 19 + Vite 8 + TypeScript
+- Tailwind CSS v4
+- localStorage for persistence
+- Vitest for BAC engine unit tests
+
+## Development
+
+```bash
+npm install
+npm run dev      # start dev server
+npm test         # run BAC engine tests
+npm run build    # production build
+```
 
 ## Status
 
-🚧 In development
+**Vertical slice complete (steps 1–4):**
+- ✅ Profile setup + data model
+- ✅ Drink logging UI + storage
+- ✅ Widmark BAC calculation engine
+- ✅ Zone display / gauge component
+
+**Coming next:**
+- Food check-in + absorption adjustment
+- Hydration tracker + reminders
+- Pre-session limit setting + alerts
+- Session history / trends view
+- PWA polish (installable, offline)
