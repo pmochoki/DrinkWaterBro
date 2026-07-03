@@ -26,6 +26,24 @@ This app is about awareness, not optimization. It won't tell you how much
 more you can drink. It'll tell you where you're at and help you stay in 
 control — that's it.
 
+## Getting Started
+
+```bash
+npm install
+npm run dev
+```
+
+Open http://localhost:5173 in your browser.
+
+### Build for production
+
+```bash
+npm run build
+npm run preview
+```
+
+The PWA is installable from supported browsers after building.
+
 ## Status
 
 🚧 In development
