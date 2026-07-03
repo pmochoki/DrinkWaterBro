@@ -24,10 +24,27 @@ This app is about **awareness, not optimization**. It won't tell you how much mo
 
 ```bash
 npm install
+cp .env.example .env   # add Firebase keys from console.firebase.google.com
 npm run dev      # start dev server
 npm test         # run unit tests
 npm run build    # production build
 ```
+
+### Firebase setup
+
+1. Create a Firebase project and enable **Authentication** (e.g. Email/Password or Google).
+2. Create a **Firestore** database.
+3. Copy `.env.example` → `.env` and paste your web app config keys (never commit `.env`).
+4. Deploy security rules so users can only access their own data:
+
+```bash
+npm install -g firebase-tools   # once
+firebase login
+firebase use --add <your-project-id>
+npm run firebase:deploy-rules
+```
+
+Data is stored under `users/{uid}/…` — rules require `request.auth.uid == userId`.
 
 ## Roadmap
 
