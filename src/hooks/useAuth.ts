@@ -1,47 +1,63 @@
-import { useEffect, useState } from 'react'
-import { onAuthStateChanged, signInAnonymously, type User } from 'firebase/auth'
+import { useCallback, useEffect, useState } from 'react'
+import {
+  GoogleAuthProvider,
+  onAuthStateChanged,
+  signInWithPopup,
+  signOut as firebaseSignOut,
+  type User,
+} from 'firebase/auth'
 import { auth } from '../firebase'
+
+const googleProvider = new GoogleAuthProvider()
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [localOnly, setLocalOnly] = useState(false)
+  const [signingIn, setSigningIn] = useState(false)
 
   useEffect(() => {
-    let cancelled = false
-
     const unsubscribe = onAuthStateChanged(
       auth,
       (nextUser) => {
-        if (cancelled) return
         setUser(nextUser)
         setLoading(false)
       },
       (err) => {
-        if (cancelled) return
         setError(err.message)
-        setLocalOnly(true)
         setLoading(false)
       },
     )
 
-    return () => {
-      cancelled = true
-      unsubscribe()
+    return unsubscribe
+  }, [])
+
+  const signInWithGoogle = useCallback(async () => {
+    setSigningIn(true)
+    setError(null)
+    try {
+      await signInWithPopup(auth, googleProvider)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Google sign-in failed'
+      setError(message)
+      throw err
+    } finally {
+      setSigningIn(false)
     }
   }, [])
 
-  useEffect(() => {
-    if (loading || user || localOnly) return
+  const signOut = useCallback(async () => {
+    setError(null)
+    await firebaseSignOut(auth)
+  }, [])
 
-    signInAnonymously(auth).catch((err) => {
-      // Anonymous auth may not be enabled yet — app still works locally
-      setError(err.message)
-      setLocalOnly(true)
-      setLoading(false)
-    })
-  }, [loading, user, localOnly])
-
-  return { user, loading, error, localOnly, cloudReady: !!user && !localOnly }
+  return {
+    user,
+    loading,
+    error,
+    signingIn,
+    signInWithGoogle,
+    signOut,
+    cloudReady: !!user,
+  }
 }

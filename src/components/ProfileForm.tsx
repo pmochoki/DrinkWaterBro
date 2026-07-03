@@ -6,10 +6,11 @@ import { feetInchesToCm } from '../lib/units'
 interface ProfileFormProps {
   initial?: UserProfile | null
   onSave: (profile: UserProfile) => void
+  onSignOut?: () => void
   title?: string
 }
 
-export function ProfileForm({ initial, onSave, title = 'Your Profile' }: ProfileFormProps) {
+export function ProfileForm({ initial, onSave, onSignOut, title = 'Your Profile' }: ProfileFormProps) {
   const [weightUnit, setWeightUnit] = useState<WeightUnit>(initial?.weightUnit ?? 'kg')
   const [weight, setWeight] = useState(initial?.weight?.toString() ?? '')
   const [heightUnit, setHeightUnit] = useState<'cm' | 'ft'>('cm')
@@ -290,6 +291,16 @@ export function ProfileForm({ initial, onSave, title = 'Your Profile' }: Profile
       >
         {initial ? 'Save Changes' : "Let's Go 💧"}
       </button>
+
+      {onSignOut && (
+        <button
+          type="button"
+          onClick={onSignOut}
+          className="mt-3 w-full py-2 text-sm text-slate-500 underline"
+        >
+          Sign out
+        </button>
+      )}
     </form>
   )
 }

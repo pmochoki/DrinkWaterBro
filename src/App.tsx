@@ -8,13 +8,14 @@ import { SessionCommitment } from './components/SessionCommitment'
 import { RecoveryPlan } from './components/RecoveryPlan'
 import { SessionHistory } from './components/SessionHistory'
 import { PatternFlag } from './components/PatternFlag'
+import { SignIn } from './components/SignIn'
 import { detectDrinkingPatterns } from './lib/patterns'
 import type { SessionGoal } from './types'
 
 type PreSessionStep = 'commitment' | 'food'
 
 export default function App() {
-  const { user, loading: authLoading, cloudReady } = useAuth()
+  const { user, loading: authLoading, signingIn, error: authError, signInWithGoogle, signOut, cloudReady } = useAuth()
   const {
     profile,
     activeSession,
@@ -56,6 +57,16 @@ export default function App() {
     )
   }
 
+  if (!user) {
+    return (
+      <SignIn
+        onSignIn={signInWithGoogle}
+        loading={signingIn}
+        error={authError}
+      />
+    )
+  }
+
   if (!profile) {
     return (
       <div className="mx-auto flex min-h-dvh max-w-lg flex-col justify-center px-4 py-8">
@@ -69,7 +80,7 @@ export default function App() {
           {syncing && <p className="mt-2 text-xs text-slate-500">Syncing your data…</p>}
           {syncError && <p className="mt-2 text-xs text-amber-400">Cloud sync issue — saved locally.</p>}
         </div>
-        <ProfileForm onSave={setProfile} />
+        <ProfileForm onSave={setProfile} onSignOut={() => void signOut()} />
       </div>
     )
   }
