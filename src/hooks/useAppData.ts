@@ -1,7 +1,19 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { AppData, UserProfile, ActiveSession, DrinkEntry, FoodIntake } from '../types'
+import type {
+  AppData,
+  UserProfile,
+  ActiveSession,
+  DrinkEntry,
+  FoodIntake,
+  SessionGoal,
+  CompletedSession,
+} from '../types'
 import { loadAppData, saveAppData, generateId } from '../lib/storage'
 import { loadFirestoreAppData, saveFirestoreAppData } from '../lib/firestoreStorage'
+import { calculateBAC, getZone } from '../lib/bac'
+import { totalGlasses } from '../lib/hydration'
+import { buildSessionAlarms } from '../lib/recovery'
+import { scheduleSessionAlarms } from '../lib/alarms'
 
 interface UseAppDataOptions {
   uid?: string | null
@@ -12,6 +24,7 @@ export function useAppData({ uid, cloudReady = false }: UseAppDataOptions = {}) 
   const [data, setData] = useState<AppData>(() => loadAppData())
   const [syncing, setSyncing] = useState(false)
   const [syncError, setSyncError] = useState<string | null>(null)
+  const [lastCompletedSession, setLastCompletedSession] = useState<CompletedSession | null>(null)
   const hydratedFromCloud = useRef(false)
   const skipNextSave = useRef(false)
 
@@ -30,8 +43,14 @@ export function useAppData({ uid, cloudReady = false }: UseAppDataOptions = {}) 
         if (cancelled) return
         skipNextSave.current = true
         setData((local) => {
-          const hasLocal = local.profile != null || local.activeSession != null
-          const hasCloud = cloudData.profile != null || cloudData.activeSession != null
+          const hasLocal =
+            local.profile != null ||
+            local.activeSession != null ||
+            local.sessionHistory.length > 0
+          const hasCloud =
+            cloudData.profile != null ||
+            cloudData.activeSession != null ||
+            cloudData.sessionHistory.length > 0
           if (!hasCloud && hasLocal) return local
           return cloudData
         })
@@ -67,19 +86,75 @@ export function useAppData({ uid, cloudReady = false }: UseAppDataOptions = {}) 
     setData((prev) => ({ ...prev, profile }))
   }, [])
 
-  const startSession = useCallback((foodIntake: FoodIntake) => {
-    const session: ActiveSession = {
-      id: generateId(),
-      startedAt: Date.now(),
-      drinks: [],
-      foodIntake,
-    }
-    setData((prev) => ({ ...prev, activeSession: session }))
-    return session
-  }, [])
+  const startSession = useCallback(
+    (foodIntake: FoodIntake, goal: SessionGoal, drinkLimit: number) => {
+      const profile = data.profile
+      const alarms = profile ? buildSessionAlarms(profile) : undefined
+      if (alarms) scheduleSessionAlarms(alarms)
+
+      const session: ActiveSession = {
+        id: generateId(),
+        startedAt: Date.now(),
+        drinks: [],
+        foodIntake,
+        goal,
+        drinkLimit,
+        hydration: [],
+        alarms,
+      }
+      setData((prev) => ({ ...prev, activeSession: session }))
+      return session
+    },
+    [data.profile],
+  )
 
   const endSession = useCallback(() => {
-    setData((prev) => ({ ...prev, activeSession: null }))
+    setData((prev) => {
+      if (!prev.activeSession || !prev.profile) {
+        return { ...prev, activeSession: null }
+      }
+
+      const session = prev.activeSession
+      const peakBac = calculateBAC(
+        session.drinks,
+        prev.profile,
+        Date.now(),
+        session.foodIntake,
+      )
+      const completed: CompletedSession = {
+        id: session.id,
+        startedAt: session.startedAt,
+        endedAt: Date.now(),
+        drinks: session.drinks,
+        foodIntake: session.foodIntake,
+        goal: session.goal,
+        peakBac,
+        peakZone: getZone(peakBac).zone,
+        hydrationGlasses: totalGlasses(session.hydration),
+      }
+
+      setLastCompletedSession(completed)
+
+      return {
+        ...prev,
+        activeSession: null,
+        sessionHistory: [completed, ...prev.sessionHistory].slice(0, 100),
+      }
+    })
+  }, [])
+
+  const dismissRecovery = useCallback(() => {
+    setLastCompletedSession(null)
+  }, [])
+
+  const rateRecovery = useCallback((sessionId: string, rating: number) => {
+    setData((prev) => ({
+      ...prev,
+      sessionHistory: prev.sessionHistory.map((s) =>
+        s.id === sessionId ? { ...s, recoveryRating: rating } : s,
+      ),
+    }))
+    setLastCompletedSession(null)
   }, [])
 
   const addDrink = useCallback((drink: Omit<DrinkEntry, 'id'>) => {
@@ -98,6 +173,20 @@ export function useAppData({ uid, cloudReady = false }: UseAppDataOptions = {}) 
     })
 
     return { entry }
+  }, [])
+
+  const addWater = useCallback((glasses: number = 1) => {
+    setData((prev) => {
+      if (!prev.activeSession) return prev
+      const entry = { id: generateId(), glasses, timestamp: Date.now() }
+      return {
+        ...prev,
+        activeSession: {
+          ...prev.activeSession,
+          hydration: [...prev.activeSession.hydration, entry],
+        },
+      }
+    })
   }, [])
 
   const dismissFastDrinkingAlert = useCallback(() => {
@@ -124,6 +213,39 @@ export function useAppData({ uid, cloudReady = false }: UseAppDataOptions = {}) 
         },
       }
     })
+  }, [])
+
+  const dismissLimitWarning = useCallback(() => {
+    setData((prev) => {
+      if (!prev.activeSession) return prev
+      return {
+        ...prev,
+        activeSession: {
+          ...prev.activeSession,
+          limitWarningDismissed: true,
+        },
+      }
+    })
+  }, [])
+
+  const dismissHydrationReminder = useCallback(() => {
+    setData((prev) => {
+      if (!prev.activeSession) return prev
+      return {
+        ...prev,
+        activeSession: {
+          ...prev.activeSession,
+          hydrationReminderDismissedAt: Date.now(),
+        },
+      }
+    })
+  }, [])
+
+  const dismissPatternFlag = useCallback(() => {
+    setData((prev) => ({
+      ...prev,
+      patternFlagShownAt: Date.now(),
+    }))
   }, [])
 
   const updateDrink = useCallback((id: string, updates: Partial<DrinkEntry>) => {
@@ -158,15 +280,23 @@ export function useAppData({ uid, cloudReady = false }: UseAppDataOptions = {}) 
     data,
     profile: data.profile,
     activeSession: data.activeSession,
+    sessionHistory: data.sessionHistory,
+    lastCompletedSession,
     syncing,
     syncError,
     setProfile,
     startSession,
     endSession,
+    dismissRecovery,
+    rateRecovery,
     addDrink,
+    addWater,
     updateDrink,
     deleteDrink,
     dismissFastDrinkingAlert,
     dismissEmptyStomachWarning,
+    dismissLimitWarning,
+    dismissHydrationReminder,
+    dismissPatternFlag,
   }
 }

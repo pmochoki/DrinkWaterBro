@@ -1,6 +1,6 @@
-import { DEFAULT_METABOLISM_RATE, ETHANOL_DENSITY, WIDMARK_R, ZONES } from './constants'
+import { DEFAULT_METABOLISM_RATE, ETHANOL_DENSITY, FOOD_ABSORPTION, WIDMARK_R, ZONES } from './constants'
 import { lbToKg } from './units'
-import type { DrinkEntry, UserProfile, Zone, ZoneInfo } from '../types'
+import type { DrinkEntry, FoodIntake, UserProfile, Zone, ZoneInfo } from '../types'
 
 function weightToKg(weight: number, unit: 'kg' | 'lb'): number {
   return unit === 'kg' ? weight : lbToKg(weight)
@@ -10,32 +10,51 @@ export function alcoholGrams(volumeMl: number, abvPercent: number): number {
   return volumeMl * (abvPercent / 100) * ETHANOL_DENSITY
 }
 
-/** Peak BAC from a single drink using Widmark: A / (r × weightKg × 10) */
+/** Peak BAC from a single drink using Widmark, adjusted for food absorption */
 export function calculateDrinkPeakBAC(
   drink: DrinkEntry,
   profile: UserProfile,
+  foodIntake: FoodIntake | null = null,
 ): number {
   const grams = alcoholGrams(drink.volumeMl, drink.abvPercent)
   const weightKg = weightToKg(profile.weight, profile.weightUnit)
   const r = WIDMARK_R[profile.sex]
-  return grams / (weightKg * r * 10)
+  const basePeak = grams / (weightKg * r * 10)
+  const { peakMultiplier } = FOOD_ABSORPTION[foodIntake ?? 'snacks']
+  return basePeak * peakMultiplier
+}
+
+function drinkBACContribution(
+  drink: DrinkEntry,
+  profile: UserProfile,
+  atTime: number,
+  foodIntake: FoodIntake | null,
+  metabolismRate: number,
+): number {
+  const peakBAC = calculateDrinkPeakBAC(drink, profile, foodIntake)
+  const { rampUpMinutes } = FOOD_ABSORPTION[foodIntake ?? 'snacks']
+  const rampUpHours = rampUpMinutes / 60
+  const hoursSince = (atTime - drink.timestamp) / (1000 * 60 * 60)
+
+  if (hoursSince < rampUpHours) {
+    return peakBAC * (hoursSince / rampUpHours)
+  }
+
+  const hoursAtPeak = hoursSince - rampUpHours
+  return Math.max(0, peakBAC - metabolismRate * hoursAtPeak)
 }
 
 export function calculateBAC(
   drinks: DrinkEntry[],
   profile: UserProfile,
   atTime: number = Date.now(),
+  foodIntake: FoodIntake | null = null,
 ): number {
-  const weightKg = weightToKg(profile.weight, profile.weightUnit)
-  const r = WIDMARK_R[profile.sex]
   const metabolismRate = profile.metabolismRate ?? DEFAULT_METABOLISM_RATE
 
   let totalBAC = 0
   for (const drink of drinks) {
-    const grams = alcoholGrams(drink.volumeMl, drink.abvPercent)
-    const peakBAC = grams / (weightKg * r * 10)
-    const hoursElapsed = (atTime - drink.timestamp) / (1000 * 60 * 60)
-    totalBAC += Math.max(0, peakBAC - metabolismRate * hoursElapsed)
+    totalBAC += drinkBACContribution(drink, profile, atTime, foodIntake, metabolismRate)
   }
 
   return Math.max(0, totalBAC)

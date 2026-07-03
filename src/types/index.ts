@@ -2,6 +2,8 @@ export type WeightUnit = 'kg' | 'lb'
 export type VolumeUnit = 'ml' | 'oz'
 export type BiologicalSex = 'male' | 'female'
 export type Zone = 'sober' | 'buzzed' | 'impaired' | 'danger'
+export type FoodIntake = 'nothing' | 'snacks' | 'light_meal' | 'full_meal'
+export type SessionGoal = 'couple' | 'buzzed' | 'full_night'
 
 export interface UserProfile {
   weight: number
@@ -11,6 +13,9 @@ export interface UserProfile {
   sex: BiologicalSex
   workTomorrow: boolean
   metabolismRate: number
+  country?: string
+  wakeTimeHour?: number
+  wakeTimeMinute?: number
 }
 
 export interface DrinkEntry {
@@ -21,16 +26,52 @@ export interface DrinkEntry {
   timestamp: number
 }
 
+export interface HydrationEntry {
+  id: string
+  glasses: number
+  timestamp: number
+}
+
+export interface SessionAlarms {
+  wakeTime?: number
+  stopDrinkingAt?: number
+  hydrateBeforeBedAt?: number
+  wakeUpAt?: number
+}
+
 export interface ActiveSession {
   id: string
   startedAt: number
   drinks: DrinkEntry[]
+  foodIntake: FoodIntake
+  goal: SessionGoal
+  drinkLimit: number
+  hydration: HydrationEntry[]
+  alarms?: SessionAlarms
   fastDrinkingAlertDismissed?: boolean
+  emptyStomachWarningDismissed?: boolean
+  limitWarningDismissed?: boolean
+  hydrationReminderDismissedAt?: number
+}
+
+export interface CompletedSession {
+  id: string
+  startedAt: number
+  endedAt: number
+  drinks: DrinkEntry[]
+  foodIntake: FoodIntake
+  goal: SessionGoal
+  peakBac: number
+  peakZone: Zone
+  hydrationGlasses: number
+  recoveryRating?: number
 }
 
 export interface AppData {
   profile: UserProfile | null
   activeSession: ActiveSession | null
+  sessionHistory: CompletedSession[]
+  patternFlagShownAt?: number
 }
 
 export interface QuickDrink {

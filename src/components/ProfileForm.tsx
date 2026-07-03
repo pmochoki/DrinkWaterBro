@@ -19,6 +19,13 @@ export function ProfileForm({ initial, onSave, title = 'Your Profile' }: Profile
   const [age, setAge] = useState(initial?.age?.toString() ?? '')
   const [sex, setSex] = useState<BiologicalSex>(initial?.sex ?? 'male')
   const [workTomorrow, setWorkTomorrow] = useState(initial?.workTomorrow ?? false)
+  const [wakeTimeHour, setWakeTimeHour] = useState(
+    initial?.wakeTimeHour?.toString() ?? '7',
+  )
+  const [wakeTimeMinute, setWakeTimeMinute] = useState(
+    initial?.wakeTimeMinute?.toString() ?? '0',
+  )
+  const [country, setCountry] = useState(initial?.country ?? '')
   const [error, setError] = useState('')
 
   function handleSubmit(e: React.FormEvent) {
@@ -62,6 +69,9 @@ export function ProfileForm({ initial, onSave, title = 'Your Profile' }: Profile
       sex,
       workTomorrow,
       metabolismRate: initial?.metabolismRate ?? DEFAULT_METABOLISM_RATE,
+      country: country || undefined,
+      wakeTimeHour: workTomorrow ? parseInt(wakeTimeHour, 10) : undefined,
+      wakeTimeMinute: workTomorrow ? parseInt(wakeTimeMinute, 10) : undefined,
     })
   }
 
@@ -228,6 +238,46 @@ export function ProfileForm({ initial, onSave, title = 'Your Profile' }: Profile
             Nope, day off
           </button>
         </div>
+        {workTomorrow && (
+          <div className="mt-3 flex items-center gap-2">
+            <span className="text-xs text-slate-400">Wake up at</span>
+            <input
+              type="number"
+              min={0}
+              max={23}
+              value={wakeTimeHour}
+              onChange={(e) => setWakeTimeHour(e.target.value)}
+              className="w-16 rounded-lg bg-surface-light px-2 py-1 text-center text-white"
+            />
+            <span className="text-slate-400">:</span>
+            <input
+              type="number"
+              min={0}
+              max={59}
+              value={wakeTimeMinute}
+              onChange={(e) => setWakeTimeMinute(e.target.value)}
+              className="w-16 rounded-lg bg-surface-light px-2 py-1 text-center text-white"
+            />
+          </div>
+        )}
+      </fieldset>
+
+      <fieldset>
+        <legend className="mb-2 text-sm font-medium text-slate-300">
+          Country (optional)
+        </legend>
+        <p className="mb-2 text-xs text-slate-500">
+          For local support resources if we ever notice concerning patterns.
+        </p>
+        <select
+          value={country}
+          onChange={(e) => setCountry(e.target.value)}
+          className="w-full rounded-xl bg-surface-light px-4 py-3 text-white outline-none"
+        >
+          <option value="">Select country</option>
+          <option value="US">United States</option>
+          <option value="UK">United Kingdom</option>
+        </select>
       </fieldset>
 
       {error && (

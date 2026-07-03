@@ -1,4 +1,10 @@
-import type { QuickDrink, ZoneInfo } from '../types'
+import type { FoodIntake, QuickDrink, SessionGoal, ZoneInfo } from '../types'
+
+export const GOAL_OPTIONS: { value: SessionGoal; label: string; emoji: string; limit: number; hint: string }[] = [
+  { value: 'couple', label: 'Just a couple', emoji: '🍻', limit: 2, hint: 'Keeping it light tonight' },
+  { value: 'buzzed', label: 'Get buzzed', emoji: '😊', limit: 4, hint: 'A fun night, staying aware' },
+  { value: 'full_night', label: 'Full night out', emoji: '🎉', limit: 8, hint: 'Long night — we\'ll keep you honest' },
+]
 
 export const STORAGE_KEY = 'drinkwaterbro-data'
 
@@ -31,3 +37,21 @@ export const ETHANOL_DENSITY = 0.789 // g/ml
 /** Fast drinking: 3+ drinks within this window (ms) */
 export const FAST_DRINK_WINDOW_MS = 45 * 60 * 1000
 export const FAST_DRINK_THRESHOLD = 3
+
+export interface FoodAbsorptionProfile {
+  peakMultiplier: number
+  rampUpMinutes: number
+  label: string
+  emoji: string
+}
+
+export const FOOD_ABSORPTION: Record<FoodIntake, FoodAbsorptionProfile> = {
+  nothing: { peakMultiplier: 1.3, rampUpMinutes: 15, label: 'Nothing', emoji: '🫗' },
+  snacks: { peakMultiplier: 1.1, rampUpMinutes: 30, label: 'Snacks only', emoji: '🥨' },
+  light_meal: { peakMultiplier: 0.85, rampUpMinutes: 50, label: 'Light meal', emoji: '🥗' },
+  full_meal: { peakMultiplier: 0.7, rampUpMinutes: 75, label: 'Full meal', emoji: '🍽️' },
+}
+
+export const FOOD_INTAKE_OPTIONS = (
+  Object.entries(FOOD_ABSORPTION) as [FoodIntake, FoodAbsorptionProfile][]
+).map(([value, profile]) => ({ value, ...profile }))

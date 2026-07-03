@@ -1,59 +1,66 @@
 # DrinkWaterBro 💧
 
-A personal harm-reduction drink tracking app — like a smart, caring friend who happens to know a lot about how alcohol works.
+A personal harm-reduction drink tracking app — because sometimes you need a friend to tell you to drink some water, bro.
 
-## What it does (vertical slice — steps 1–5)
+## What it does
 
-- **Profile setup** — weight (kg/lb), height, age, biological sex, "work tomorrow?" toggle
-- **Drink logging** — 7 quick-add presets (beer, wine, vodka, martini, mimosa, whiskey, champagne) + custom entry; edit/delete; fast-drinking alert (3+ in 45 min)
+- **Profile setup** — weight (kg/lb), height, age, biological sex, work-tomorrow toggle, wake time, country
+- **Pre-session commitment** — set a personal drink limit before you start
+- **Drink logging** — 7 quick-add presets + custom entry; fast-drinking alert (3+ in 45 min)
 - **BAC estimation** — Widmark formula with food-adjusted absorption; live refresh every 60s
-- **Food check-in** — session-start prompt (nothing / snacks / light meal / full meal); empty-stomach warning; party snack tips; absorption curve adjustment
+- **Food check-in** — session-start prompt with empty-stomach warning and snack tips
 - **Zone display** — Sober / Buzzed / Impaired / Danger gauge with time-to-drop estimate
+- **Hydration tracker** — log water, reminders between drinks, electrolyte tips
+- **Recovery plan** — before-sleep checklist, hangover foods, morning breakfast suggestions
+- **Smart alarms** — stop-drinking / hydrate / wake-up notifications (when permitted)
+- **Session history** — past sessions with peak zone, duration, recovery rating
+- **Pattern detection** — compassionate mental health flag with support resources
+- **PWA** — installable, works offline
 
 ## Philosophy
 
-This app is about **awareness, not optimization**. It won't tell you how much more you can drink. Warm, direct, never preachy — never judgmental.
+This app is about **awareness, not optimization**. It won't tell you how much more you can drink. Warm, direct, never preachy.
 
 ## Tech Stack
 
 - React 19 + Vite 8 + TypeScript
 - Tailwind CSS v4
-- localStorage for persistence
-- Vitest for BAC + drinking-rate unit tests
+- Firebase (anonymous auth + Firestore sync) with localStorage fallback
+- Vitest for unit tests
+- PWA via vite-plugin-pwa
 
 ## Development
 
 ```bash
 npm install
 cp .env.example .env   # add Firebase keys from console.firebase.google.com
-npm run dev      # start dev server
-npm test         # run unit tests
-npm run build    # production build
+npm run dev
+npm test
+npm run build
 ```
 
 ### Firebase setup
 
-1. Create a Firebase project and enable **Authentication** → **Anonymous** sign-in (frictionless; no login UI).
-2. Create a **Firestore** database (production mode).
-3. Copy `.env.example` → `.env` and paste your web app config keys (never commit `.env`).
-4. Deploy security rules so users can only access their own data:
+1. Create a Firebase project and enable **Authentication → Anonymous** sign-in.
+2. Create a **Firestore** database.
+3. Copy `.env.example` → `.env` and paste your web app config keys.
+4. Deploy security rules:
 
 ```bash
-npm install -g firebase-tools   # once
-firebase login
-firebase use --add drinkwaterbro
+npx firebase login
 npm run firebase:deploy-rules
 ```
 
-Data is stored under `users/{uid}/data/app` — rules require `request.auth.uid == userId`. Local cache in `localStorage` is kept as a fallback.
+The app works fully offline via localStorage if Firebase isn't configured yet.
 
 ## Roadmap
 
+- [x] Profile + drink logging + BAC engine + zone gauge (steps 1–4)
 - [x] Food check-in + absorption adjustment (step 5)
-- [ ] Hydration tracker + reminders (step 6)
-- [ ] Next-day recovery plan (step 7)
-- [ ] Smart alarm system + PWA push (step 8)
-- [ ] Pre-session commitment (step 9)
-- [ ] Pattern detection + mental health flag (step 10)
-- [ ] Session history + trends (step 11)
-- [ ] PWA polish — offline, installable (step 12)
+- [x] Hydration tracker + reminders (step 6)
+- [x] Next-day recovery plan (step 7)
+- [x] Smart alarm system (step 8)
+- [x] Pre-session commitment (step 9)
+- [x] Pattern detection + mental health flag (step 10)
+- [x] Session history + trends (step 11)
+- [x] PWA polish — offline, installable (step 12)

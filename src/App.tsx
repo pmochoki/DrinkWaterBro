@@ -1,39 +1,57 @@
+import { useState } from 'react'
 import { useAppData } from './hooks/useAppData'
 import { useAuth } from './hooks/useAuth'
 import { ProfileForm } from './components/ProfileForm'
 import { SessionView } from './components/SessionView'
 import { FoodCheckIn } from './components/FoodCheckIn'
+import { SessionCommitment } from './components/SessionCommitment'
+import { RecoveryPlan } from './components/RecoveryPlan'
+import { SessionHistory } from './components/SessionHistory'
+import { PatternFlag } from './components/PatternFlag'
+import { detectDrinkingPatterns } from './lib/patterns'
+import type { SessionGoal } from './types'
+
+type PreSessionStep = 'commitment' | 'food'
 
 export default function App() {
-  const { user, loading: authLoading, error: authError } = useAuth()
+  const { user, loading: authLoading, cloudReady } = useAuth()
   const {
     profile,
     activeSession,
+    sessionHistory,
+    lastCompletedSession,
     syncing,
     syncError,
     setProfile,
     startSession,
     endSession,
+    dismissRecovery,
+    rateRecovery,
     addDrink,
+    addWater,
     updateDrink,
     deleteDrink,
     dismissFastDrinkingAlert,
     dismissEmptyStomachWarning,
-  } = useAppData({ uid: user?.uid, cloudReady: !!user })
+    dismissLimitWarning,
+    dismissHydrationReminder,
+    dismissPatternFlag,
+    data,
+  } = useAppData({ uid: user?.uid, cloudReady })
+
+  const [preSessionStep, setPreSessionStep] = useState<PreSessionStep>('commitment')
+  const [pendingGoal, setPendingGoal] = useState<{ goal: SessionGoal; limit: number } | null>(null)
+  const [showHistory, setShowHistory] = useState(false)
+
+  const pattern = detectDrinkingPatterns(
+    sessionHistory,
+    data.patternFlagShownAt,
+  )
 
   if (authLoading) {
     return (
       <div className="mx-auto flex min-h-dvh max-w-lg items-center justify-center px-4">
         <p className="text-slate-400">Connecting…</p>
-      </div>
-    )
-  }
-
-  if (authError) {
-    return (
-      <div className="mx-auto flex min-h-dvh max-w-lg flex-col items-center justify-center gap-3 px-4 text-center">
-        <p className="text-red-400">Could not connect to Firebase.</p>
-        <p className="text-sm text-slate-500">{authError}</p>
       </div>
     )
   }
@@ -56,13 +74,73 @@ export default function App() {
     )
   }
 
+  if (lastCompletedSession) {
+    return (
+      <div className="mx-auto max-w-lg">
+        <RecoveryPlan
+          session={lastCompletedSession}
+          profile={profile}
+          onDone={dismissRecovery}
+          onRate={(rating) => rateRecovery(lastCompletedSession.id, rating)}
+        />
+      </div>
+    )
+  }
+
+  if (showHistory) {
+    return (
+      <div className="mx-auto max-w-lg">
+        <SessionHistory sessions={sessionHistory} onBack={() => setShowHistory(false)} />
+      </div>
+    )
+  }
+
   if (!activeSession) {
+    if (preSessionStep === 'commitment') {
+      return (
+        <div className="mx-auto max-w-lg">
+          {pattern.show && (
+            <div className="pt-3">
+              <PatternFlag
+                message={pattern.message}
+                country={profile.country}
+                onDismiss={dismissPatternFlag}
+              />
+            </div>
+          )}
+          <SessionCommitment
+            onSelect={(goal, limit) => {
+              setPendingGoal({ goal, limit })
+              setPreSessionStep('food')
+            }}
+          />
+          <div className="px-4 pb-6 text-center">
+            <button
+              onClick={() => setShowHistory(true)}
+              className="text-sm text-slate-500 underline"
+            >
+              View session history
+            </button>
+          </div>
+        </div>
+      )
+    }
+
     return (
       <div className="mx-auto max-w-lg">
         {syncError && (
           <p className="px-4 pt-3 text-center text-xs text-amber-400">Cloud sync issue — saved locally.</p>
         )}
-        <FoodCheckIn onSelect={startSession} />
+        <FoodCheckIn
+          onSelect={(foodIntake) => {
+            if (pendingGoal) {
+              startSession(foodIntake, pendingGoal.goal, pendingGoal.limit)
+              setPendingGoal(null)
+              setPreSessionStep('commitment')
+            }
+          }}
+          onBack={() => setPreSessionStep('commitment')}
+        />
       </div>
     )
   }
@@ -76,15 +154,23 @@ export default function App() {
         profile={profile}
         foodIntake={activeSession.foodIntake}
         drinks={activeSession.drinks}
+        hydration={activeSession.hydration}
+        drinkLimit={activeSession.drinkLimit}
         fastDrinkingAlertDismissed={activeSession.fastDrinkingAlertDismissed ?? false}
         emptyStomachWarningDismissed={activeSession.emptyStomachWarningDismissed ?? false}
+        limitWarningDismissed={activeSession.limitWarningDismissed ?? false}
+        hydrationReminderDismissedAt={activeSession.hydrationReminderDismissedAt}
         onAddDrink={addDrink}
+        onAddWater={addWater}
         onUpdateDrink={updateDrink}
         onDeleteDrink={deleteDrink}
         onUpdateProfile={setProfile}
         onEndSession={endSession}
+        onShowHistory={() => setShowHistory(true)}
         onDismissFastDrinkingAlert={dismissFastDrinkingAlert}
         onDismissEmptyStomachWarning={dismissEmptyStomachWarning}
+        onDismissLimitWarning={dismissLimitWarning}
+        onDismissHydrationReminder={dismissHydrationReminder}
       />
     </div>
   )

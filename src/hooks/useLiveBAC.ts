@@ -1,10 +1,14 @@
 import { useEffect, useState } from 'react'
 import { calculateBAC } from '../lib/bac'
-import type { DrinkEntry, UserProfile } from '../types'
+import type { DrinkEntry, FoodIntake, UserProfile } from '../types'
 
 const TICK_MS = 60_000
 
-export function useLiveBAC(drinks: DrinkEntry[], profile: UserProfile | null) {
+export function useLiveBAC(
+  drinks: DrinkEntry[],
+  profile: UserProfile | null,
+  foodIntake: FoodIntake | null = null,
+) {
   const [now, setNow] = useState(Date.now())
 
   useEffect(() => {
@@ -16,6 +20,6 @@ export function useLiveBAC(drinks: DrinkEntry[], profile: UserProfile | null) {
     return { bac: 0, now }
   }
 
-  const bac = calculateBAC(drinks, profile, now)
+  const bac = calculateBAC(drinks, profile, now, foodIntake)
   return { bac, now }
 }
