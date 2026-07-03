@@ -2,11 +2,12 @@
 
 A personal harm-reduction drink tracking app — like a smart, caring friend who happens to know a lot about how alcohol works.
 
-## What it does (vertical slice — steps 1–4)
+## What it does (vertical slice — steps 1–5)
 
 - **Profile setup** — weight (kg/lb), height, age, biological sex, "work tomorrow?" toggle
 - **Drink logging** — 7 quick-add presets (beer, wine, vodka, martini, mimosa, whiskey, champagne) + custom entry; edit/delete; fast-drinking alert (3+ in 45 min)
-- **BAC estimation** — Widmark formula with unit tests; live refresh every 60s
+- **BAC estimation** — Widmark formula with food-adjusted absorption; live refresh every 60s
+- **Food check-in** — session-start prompt (nothing / snacks / light meal / full meal); empty-stomach warning; party snack tips; absorption curve adjustment
 - **Zone display** — Sober / Buzzed / Impaired / Danger gauge with time-to-drop estimate
 
 ## Philosophy
@@ -32,23 +33,23 @@ npm run build    # production build
 
 ### Firebase setup
 
-1. Create a Firebase project and enable **Authentication** (e.g. Email/Password or Google).
-2. Create a **Firestore** database.
+1. Create a Firebase project and enable **Authentication** → **Anonymous** sign-in (frictionless; no login UI).
+2. Create a **Firestore** database (production mode).
 3. Copy `.env.example` → `.env` and paste your web app config keys (never commit `.env`).
 4. Deploy security rules so users can only access their own data:
 
 ```bash
 npm install -g firebase-tools   # once
 firebase login
-firebase use --add <your-project-id>
+firebase use --add drinkwaterbro
 npm run firebase:deploy-rules
 ```
 
-Data is stored under `users/{uid}/…` — rules require `request.auth.uid == userId`.
+Data is stored under `users/{uid}/data/app` — rules require `request.auth.uid == userId`. Local cache in `localStorage` is kept as a fallback.
 
 ## Roadmap
 
-- [ ] Food check-in + absorption adjustment (step 5)
+- [x] Food check-in + absorption adjustment (step 5)
 - [ ] Hydration tracker + reminders (step 6)
 - [ ] Next-day recovery plan (step 7)
 - [ ] Smart alarm system + PWA push (step 8)

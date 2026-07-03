@@ -11,7 +11,7 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
 }
 
-function requireEnv(value, name) {
+function requireEnv(value: string | undefined, name: string): string {
   if (!value || value.trim() === '') {
     throw new Error(
       `Missing Firebase env var: ${name}. Copy .env.example to .env and add your project keys.`,
@@ -20,7 +20,6 @@ function requireEnv(value, name) {
   return value
 }
 
-// Validate at init so misconfiguration fails fast in development
 requireEnv(firebaseConfig.apiKey, 'VITE_FIREBASE_API_KEY')
 requireEnv(firebaseConfig.authDomain, 'VITE_FIREBASE_AUTH_DOMAIN')
 requireEnv(firebaseConfig.projectId, 'VITE_FIREBASE_PROJECT_ID')
