@@ -1,9 +1,24 @@
 import { STORAGE_KEY } from './constants'
-import type { AppData } from '../types'
+import type { AppData, UserProfile } from '../types'
 
 const DEFAULT_DATA: AppData = {
   profile: null,
   activeSession: null,
+}
+
+function migrateProfile(raw: Record<string, unknown>): UserProfile | null {
+  if (!raw) return null
+  const p = raw as Partial<UserProfile> & { eatingHabit?: string }
+  if (!p.weight || !p.sex) return null
+  return {
+    weight: p.weight,
+    weightUnit: p.weightUnit ?? 'kg',
+    heightCm: p.heightCm ?? 170,
+    age: p.age ?? 25,
+    sex: p.sex,
+    workTomorrow: p.workTomorrow ?? false,
+    metabolismRate: p.metabolismRate ?? 0.015,
+  }
 }
 
 export function loadAppData(): AppData {
@@ -12,7 +27,7 @@ export function loadAppData(): AppData {
     if (!raw) return { ...DEFAULT_DATA }
     const parsed = JSON.parse(raw) as AppData
     return {
-      profile: parsed.profile ?? null,
+      profile: migrateProfile(parsed.profile as unknown as Record<string, unknown>),
       activeSession: parsed.activeSession ?? null,
     }
   } catch {

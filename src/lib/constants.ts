@@ -20,9 +20,14 @@ export const QUICK_DRINKS: QuickDrink[] = [
   { id: 'beer', name: 'Beer', emoji: '🍺', volumeMl: 355, abvPercent: 5 },
   { id: 'wine', name: 'Wine', emoji: '🍷', volumeMl: 150, abvPercent: 12 },
   { id: 'vodka', name: 'Vodka Shot', emoji: '🥃', volumeMl: 44, abvPercent: 40 },
+  { id: 'martini', name: 'Martini', emoji: '🍸', volumeMl: 150, abvPercent: 30 },
   { id: 'mimosa', name: 'Mimosa', emoji: '🥂', volumeMl: 150, abvPercent: 8 },
-  { id: 'cocktail', name: 'Cocktail', emoji: '🍹', volumeMl: 200, abvPercent: 15 },
-  { id: 'seltzer', name: 'Hard Seltzer', emoji: '🫧', volumeMl: 355, abvPercent: 5 },
+  { id: 'whiskey', name: 'Whiskey', emoji: '🥃', volumeMl: 44, abvPercent: 40 },
+  { id: 'champagne', name: 'Champagne', emoji: '🍾', volumeMl: 150, abvPercent: 12 },
 ]
 
 export const ETHANOL_DENSITY = 0.789 // g/ml
+
+/** Fast drinking: 3+ drinks within this window (ms) */
+export const FAST_DRINK_WINDOW_MS = 45 * 60 * 1000
+export const FAST_DRINK_THRESHOLD = 3

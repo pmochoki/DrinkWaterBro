@@ -1,7 +1,6 @@
 export type WeightUnit = 'kg' | 'lb'
 export type VolumeUnit = 'ml' | 'oz'
 export type BiologicalSex = 'male' | 'female'
-export type EatingHabit = 'none' | 'light' | 'full' | 'unknown'
 export type Zone = 'sober' | 'buzzed' | 'impaired' | 'danger'
 
 export interface UserProfile {
@@ -10,7 +9,7 @@ export interface UserProfile {
   heightCm: number
   age: number
   sex: BiologicalSex
-  eatingHabit?: EatingHabit
+  workTomorrow: boolean
   metabolismRate: number
 }
 
@@ -26,6 +25,7 @@ export interface ActiveSession {
   id: string
   startedAt: number
   drinks: DrinkEntry[]
+  fastDrinkingAlertDismissed?: boolean
 }
 
 export interface AppData {

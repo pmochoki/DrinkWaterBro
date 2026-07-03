@@ -55,7 +55,7 @@ export function DrinkLogger({ onAdd }: DrinkLoggerProps) {
   return (
     <div className="flex flex-col gap-3">
       <p className="text-sm font-medium text-slate-400">Quick add</p>
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-4 gap-2 sm:grid-cols-4">
         {QUICK_DRINKS.map((drink) => (
           <button
             key={drink.id}

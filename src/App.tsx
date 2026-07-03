@@ -11,6 +11,7 @@ export default function App() {
     addDrink,
     updateDrink,
     deleteDrink,
+    dismissFastDrinkingAlert,
   } = useAppData()
 
   if (!profile) {
@@ -19,7 +20,7 @@ export default function App() {
         <div className="mb-8 text-center">
           <h1 className="text-3xl font-black text-water">DrinkWaterBro</h1>
           <p className="mt-2 text-slate-400">
-            Your harm-reduction buddy for nights out.
+            Like a friend who actually knows how alcohol works.
             <br />
             Stay aware. Stay in control. Drink water, bro. 💧
           </p>
@@ -36,11 +37,13 @@ export default function App() {
       <SessionView
         profile={profile}
         drinks={drinks}
+        fastDrinkingAlertDismissed={activeSession?.fastDrinkingAlertDismissed ?? false}
         onAddDrink={addDrink}
         onUpdateDrink={updateDrink}
         onDeleteDrink={deleteDrink}
         onUpdateProfile={setProfile}
         onEndSession={endSession}
+        onDismissFastDrinkingAlert={dismissFastDrinkingAlert}
       />
     </div>
   )

@@ -16,10 +16,9 @@ export function ZoneGauge({ bac, profile }: ZoneGaugeProps) {
 
   return (
     <div className="flex flex-col items-center gap-4">
-      {/* Zone label */}
       <div className="text-center">
         <p className="text-sm font-medium uppercase tracking-widest text-slate-400">
-          Current zone
+          Right now you're
         </p>
         <p
           className="mt-1 text-4xl font-black tracking-tight"
@@ -27,12 +26,9 @@ export function ZoneGauge({ bac, profile }: ZoneGaugeProps) {
         >
           {zone.label}
         </p>
-        <p className="mt-1 text-lg text-slate-300">
-          est. BAC {formatBAC(bac)}
-        </p>
+        <p className="mt-1 text-lg text-slate-300">est. BAC {formatBAC(bac)}</p>
       </div>
 
-      {/* Gauge bar */}
       <div className="relative w-full">
         <div className="flex h-6 w-full overflow-hidden rounded-full">
           {ZONES.map((z) => (
@@ -43,7 +39,6 @@ export function ZoneGauge({ bac, profile }: ZoneGaugeProps) {
             />
           ))}
         </div>
-        {/* Marker */}
         <div
           className="absolute top-1/2 -translate-y-1/2 transition-all duration-1000"
           style={{ left: `calc(${position}% - 10px)` }}
@@ -53,7 +48,6 @@ export function ZoneGauge({ bac, profile }: ZoneGaugeProps) {
             style={{ backgroundColor: zone.color }}
           />
         </div>
-        {/* Zone labels */}
         <div className="mt-2 flex justify-between text-xs text-slate-500">
           {ZONES.map((z) => (
             <span key={z.zone} className="text-center" style={{ width: '25%' }}>
@@ -63,10 +57,9 @@ export function ZoneGauge({ bac, profile }: ZoneGaugeProps) {
         </div>
       </div>
 
-      {/* Time to next zone */}
       {nextZone && (
         <p className="text-center text-sm text-slate-400">
-          {formatDuration(nextZone.ms)} to{' '}
+          About {formatDuration(nextZone.ms)} until you're back to{' '}
           <span style={{ color: nextZone.zone.color }} className="font-medium">
             {nextZone.zone.label}
           </span>
@@ -75,14 +68,12 @@ export function ZoneGauge({ bac, profile }: ZoneGaugeProps) {
 
       {bac < 0.02 && (
         <p className="text-center text-sm text-sober">
-          You're in the clear — stay hydrated 💧
+          Looking good — keep the water flowing 💧
         </p>
       )}
 
-      {/* Disclaimer */}
       <p className="rounded-xl bg-surface-light/60 px-4 py-3 text-center text-xs leading-relaxed text-slate-500">
-        Rough estimate only — not a medical or legal measurement. Many factors
-        affect real BAC.
+        Estimate only — real BAC varies by person. Not for medical or legal use.
       </p>
     </div>
   )

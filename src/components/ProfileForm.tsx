@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { BiologicalSex, EatingHabit, UserProfile, WeightUnit } from '../types'
+import type { BiologicalSex, UserProfile, WeightUnit } from '../types'
 import { DEFAULT_METABOLISM_RATE } from '../lib/constants'
 import { feetInchesToCm } from '../lib/units'
 
@@ -11,18 +11,14 @@ interface ProfileFormProps {
 
 export function ProfileForm({ initial, onSave, title = 'Your Profile' }: ProfileFormProps) {
   const [weightUnit, setWeightUnit] = useState<WeightUnit>(initial?.weightUnit ?? 'kg')
-  const [weight, setWeight] = useState(
-    initial?.weight?.toString() ?? '',
-  )
+  const [weight, setWeight] = useState(initial?.weight?.toString() ?? '')
   const [heightUnit, setHeightUnit] = useState<'cm' | 'ft'>('cm')
   const [heightCm, setHeightCm] = useState(initial?.heightCm?.toString() ?? '')
   const [heightFt, setHeightFt] = useState('')
   const [heightIn, setHeightIn] = useState('')
   const [age, setAge] = useState(initial?.age?.toString() ?? '')
   const [sex, setSex] = useState<BiologicalSex>(initial?.sex ?? 'male')
-  const [eatingHabit, setEatingHabit] = useState<EatingHabit>(
-    initial?.eatingHabit ?? 'unknown',
-  )
+  const [workTomorrow, setWorkTomorrow] = useState(initial?.workTomorrow ?? false)
   const [error, setError] = useState('')
 
   function handleSubmit(e: React.FormEvent) {
@@ -33,11 +29,11 @@ export function ProfileForm({ initial, onSave, title = 'Your Profile' }: Profile
     const ageNum = parseInt(age, 10)
 
     if (!weightNum || weightNum <= 0) {
-      setError('Please enter a valid weight.')
+      setError('Need a real weight here — helps the estimates stay useful.')
       return
     }
     if (!ageNum || ageNum < 18 || ageNum > 120) {
-      setError('Please enter a valid age (18+).')
+      setError('Gotta be 18+ to use this.')
       return
     }
 
@@ -45,30 +41,28 @@ export function ProfileForm({ initial, onSave, title = 'Your Profile' }: Profile
     if (heightUnit === 'cm') {
       cm = parseFloat(heightCm)
       if (!cm || cm <= 0) {
-        setError('Please enter a valid height.')
+        setError('Pop in your height so we can dial in the estimates.')
         return
       }
     } else {
       const ft = parseInt(heightFt, 10)
       const inches = parseInt(heightIn, 10)
       if (isNaN(ft) || isNaN(inches)) {
-        setError('Please enter a valid height.')
+        setError('Pop in your height so we can dial in the estimates.')
         return
       }
       cm = feetInchesToCm(ft, inches)
     }
 
-    const profile: UserProfile = {
+    onSave({
       weight: weightNum,
       weightUnit,
       heightCm: cm,
       age: ageNum,
       sex,
-      eatingHabit: eatingHabit === 'unknown' ? undefined : eatingHabit,
+      workTomorrow,
       metabolismRate: initial?.metabolismRate ?? DEFAULT_METABOLISM_RATE,
-    }
-
-    onSave(profile)
+    })
   }
 
   return (
@@ -76,11 +70,10 @@ export function ProfileForm({ initial, onSave, title = 'Your Profile' }: Profile
       <div>
         <h2 className="text-2xl font-bold text-white">{title}</h2>
         <p className="mt-1 text-sm text-slate-400">
-          Used for rough BAC estimates. You can edit this anytime.
+          Just the basics — used for rough BAC estimates. Edit anytime.
         </p>
       </div>
 
-      {/* Weight */}
       <fieldset>
         <legend className="mb-2 text-sm font-medium text-slate-300">Weight</legend>
         <div className="flex gap-2">
@@ -112,10 +105,9 @@ export function ProfileForm({ initial, onSave, title = 'Your Profile' }: Profile
         </div>
       </fieldset>
 
-      {/* Height */}
       <fieldset>
         <legend className="mb-2 text-sm font-medium text-slate-300">Height</legend>
-        <div className="mb-2 flex rounded-xl bg-surface-light p-1 w-fit">
+        <div className="mb-2 flex w-fit rounded-xl bg-surface-light p-1">
           {(['cm', 'ft'] as const).map((u) => (
             <button
               key={u}
@@ -167,7 +159,6 @@ export function ProfileForm({ initial, onSave, title = 'Your Profile' }: Profile
         )}
       </fieldset>
 
-      {/* Age */}
       <fieldset>
         <legend className="mb-2 text-sm font-medium text-slate-300">Age</legend>
         <input
@@ -183,7 +174,6 @@ export function ProfileForm({ initial, onSave, title = 'Your Profile' }: Profile
         />
       </fieldset>
 
-      {/* Biological sex */}
       <fieldset>
         <legend className="mb-2 text-sm font-medium text-slate-300">
           Biological sex
@@ -207,34 +197,36 @@ export function ProfileForm({ initial, onSave, title = 'Your Profile' }: Profile
         </div>
       </fieldset>
 
-      {/* Eating habits (optional) */}
       <fieldset>
         <legend className="mb-2 text-sm font-medium text-slate-300">
-          Typical eating habits
-          <span className="ml-1 text-xs text-slate-500">(optional)</span>
+          Do you have work tomorrow?
         </legend>
-        <div className="grid grid-cols-2 gap-2">
-          {(
-            [
-              ['unknown', 'Not sure'],
-              ['none', 'Usually skip meals'],
-              ['light', 'Light eater'],
-              ['full', 'Full meals'],
-            ] as [EatingHabit, string][]
-          ).map(([value, label]) => (
-            <button
-              key={value}
-              type="button"
-              onClick={() => setEatingHabit(value)}
-              className={`rounded-xl py-3 px-3 text-sm font-medium transition-colors ${
-                eatingHabit === value
-                  ? 'bg-water text-surface'
-                  : 'bg-surface-light text-slate-400 hover:text-white'
-              }`}
-            >
-              {label}
-            </button>
-          ))}
+        <p className="mb-2 text-xs text-slate-500">
+          Helps us tailor recovery tips and alarms later on.
+        </p>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => setWorkTomorrow(true)}
+            className={`flex-1 rounded-xl py-3 text-sm font-medium transition-colors ${
+              workTomorrow
+                ? 'bg-water text-surface'
+                : 'bg-surface-light text-slate-400 hover:text-white'
+            }`}
+          >
+            Yeah, unfortunately
+          </button>
+          <button
+            type="button"
+            onClick={() => setWorkTomorrow(false)}
+            className={`flex-1 rounded-xl py-3 text-sm font-medium transition-colors ${
+              !workTomorrow
+                ? 'bg-water text-surface'
+                : 'bg-surface-light text-slate-400 hover:text-white'
+            }`}
+          >
+            Nope, day off
+          </button>
         </div>
       </fieldset>
 

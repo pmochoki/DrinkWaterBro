@@ -29,6 +29,7 @@ export function useAppData() {
 
   const addDrink = useCallback((drink: Omit<DrinkEntry, 'id'>) => {
     const entry: DrinkEntry = { ...drink, id: generateId() }
+
     setData((prev) => {
       if (!prev.activeSession) {
         const session: ActiveSession = {
@@ -38,6 +39,7 @@ export function useAppData() {
         }
         return { ...prev, activeSession: session }
       }
+
       return {
         ...prev,
         activeSession: {
@@ -46,7 +48,21 @@ export function useAppData() {
         },
       }
     })
-    return entry
+
+    return { entry }
+  }, [])
+
+  const dismissFastDrinkingAlert = useCallback(() => {
+    setData((prev) => {
+      if (!prev.activeSession) return prev
+      return {
+        ...prev,
+        activeSession: {
+          ...prev.activeSession,
+          fastDrinkingAlertDismissed: true,
+        },
+      }
+    })
   }, [])
 
   const updateDrink = useCallback((id: string, updates: Partial<DrinkEntry>) => {
@@ -87,5 +103,6 @@ export function useAppData() {
     addDrink,
     updateDrink,
     deleteDrink,
+    dismissFastDrinkingAlert,
   }
 }

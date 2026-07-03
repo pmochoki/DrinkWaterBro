@@ -15,6 +15,7 @@ const testProfile: UserProfile = {
   heightCm: 175,
   age: 30,
   sex: 'male',
+  workTomorrow: false,
   metabolismRate: 0.015,
 }
 

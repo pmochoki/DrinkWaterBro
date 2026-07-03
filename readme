@@ -1,47 +1,41 @@
 # DrinkWaterBro 💧
 
-A personal harm-reduction drink tracking app — because sometimes you need a friend to tell you to drink some water, bro.
+A personal harm-reduction drink tracking app — like a smart, caring friend who happens to know a lot about how alcohol works.
 
-## What it does
+## What it does (vertical slice — steps 1–4)
 
-- Estimates your BAC in real time using the Widmark formula (weight, sex, metabolism rate)
-- Shows your current zone: Sober / Buzzed / Impaired / Danger
-- Logs drinks via quick-add buttons or custom entry (all fields editable)
-- Edit and delete past drink entries
-- Profile setup with weight (kg/lb), height, age, and biological sex
-- Persists everything to localStorage
+- **Profile setup** — weight (kg/lb), height, age, biological sex, "work tomorrow?" toggle
+- **Drink logging** — 7 quick-add presets (beer, wine, vodka, martini, mimosa, whiskey, champagne) + custom entry; edit/delete; fast-drinking alert (3+ in 45 min)
+- **BAC estimation** — Widmark formula with unit tests; live refresh every 60s
+- **Zone display** — Sober / Buzzed / Impaired / Danger gauge with time-to-drop estimate
 
 ## Philosophy
 
-This app is about **awareness, not optimization**. It won't tell you how much more you can drink. It'll tell you where you're at and help you stay in control — that's it.
+This app is about **awareness, not optimization**. It won't tell you how much more you can drink. Warm, direct, never preachy — never judgmental.
 
 ## Tech Stack
 
 - React 19 + Vite 8 + TypeScript
 - Tailwind CSS v4
 - localStorage for persistence
-- Vitest for BAC engine unit tests
+- Vitest for BAC + drinking-rate unit tests
 
 ## Development
 
 ```bash
 npm install
 npm run dev      # start dev server
-npm test         # run BAC engine tests
+npm test         # run unit tests
 npm run build    # production build
 ```
 
-## Status
+## Roadmap
 
-**Vertical slice complete (steps 1–4):**
-- ✅ Profile setup + data model
-- ✅ Drink logging UI + storage
-- ✅ Widmark BAC calculation engine
-- ✅ Zone display / gauge component
-
-**Coming next:**
-- Food check-in + absorption adjustment
-- Hydration tracker + reminders
-- Pre-session limit setting + alerts
-- Session history / trends view
-- PWA polish (installable, offline)
+- [ ] Food check-in + absorption adjustment (step 5)
+- [ ] Hydration tracker + reminders (step 6)
+- [ ] Next-day recovery plan (step 7)
+- [ ] Smart alarm system + PWA push (step 8)
+- [ ] Pre-session commitment (step 9)
+- [ ] Pattern detection + mental health flag (step 10)
+- [ ] Session history + trends (step 11)
+- [ ] PWA polish — offline, installable (step 12)
