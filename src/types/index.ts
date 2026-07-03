@@ -48,7 +48,8 @@ export interface ActiveSession {
   drinkLimit: number
   hydration: HydrationEntry[]
   alarms?: SessionAlarms
-  fastDrinkingAlertDismissed?: boolean
+  fastDrinkingDismissedAt?: number
+  midSessionRecoveryDismissed?: boolean
   emptyStomachWarningDismissed?: boolean
   limitWarningDismissed?: boolean
   hydrationReminderDismissedAt?: number
@@ -61,6 +62,8 @@ export interface CompletedSession {
   drinks: DrinkEntry[]
   foodIntake: FoodIntake
   goal: SessionGoal
+  drinkLimit: number
+  hydration: HydrationEntry[]
   peakBac: number
   peakZone: Zone
   hydrationGlasses: number
